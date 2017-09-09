@@ -61,7 +61,8 @@ def edge_detect(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
 
     # Threshold x gradient
     sxbinary = np.zeros_like(scaled_sobel)
-    sxbinary[(scaled_sobel >= sx_thresh[0]) & (scaled_sobel <= sx_thresh[1])] = 1
+    sxbinary[
+        (scaled_sobel >= sx_thresh[0]) & (scaled_sobel <= sx_thresh[1])] = 1
 
     # Threshold color channel
     s_binary = np.zeros_like(s_channel)
@@ -72,7 +73,7 @@ def edge_detect(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     color_binary = np.dstack((np.zeros_like(sxbinary), sxbinary, s_binary))
 
     combined_binary = np.zeros_like(sxbinary)
-    combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
+    combined_binary[(s_binary == 1) | (sxbinary == 1)] = 255
     return color_binary, combined_binary
 
 
@@ -94,71 +95,4 @@ def perspective_trans(img):
     M = cv2.getPerspectiveTransform(src, dst)
     warped = cv2.warpPerspective(
         img, M, img_size, flags=cv2.INTER_NEAREST)
-
     return warped
-
-
-def draw_undistord():
-    objpoints, imgpoints = calibrate_camera(glob.glob('camera_cal/*.jpg'))
-    image = misc.imread('camera_cal/calibration1.jpg')
-    undistorted = cal_undistort(image, objpoints, imgpoints)
-    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
-    f.tight_layout()
-    ax1.imshow(image)
-    ax1.set_title('Original Image', fontsize=50)
-    ax2.imshow(undistorted)
-    ax2.set_title('Undistorted Image', fontsize=50)
-    plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
-    plt.show()
-
-
-def draw_edges():
-    image = misc.imread('test_images/straight_lines2.jpg')
-    result = edge_detect(image)
-
-    # Plot the result
-    f, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 9))
-    f.tight_layout()
-
-    ax1.imshow(image)
-    ax1.set_title('Original Image', fontsize=40)
-
-    ax2.imshow(result[0])
-    ax2.set_title('Colorted Result', fontsize=40)
-
-    ax3.imshow(result[1])
-    ax3.set_title('Binary Result', fontsize=40)
-    plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
-    plt.show()
-
-
-def draw_perspective():
-    image = misc.imread('test_images/straight_lines1.jpg')
-    result = perspective_trans(image)
-
-    # Plot the result
-    f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
-    f.tight_layout()
-
-    ax1.imshow(image)
-    ax1.set_title('Original Image', fontsize=40)
-
-    ax2.imshow(result)
-    ax2.set_title('Colorted Result', fontsize=40)
-
-    plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
-    plt.show()
-
-
-def generate_images(in_fnames, out_directory, func):
-    for fname in in_fnames:
-        image = misc.imread(fname)
-        save_path = path.join(out_directory, path.basename(fname))
-        misc.imsave(save_path, func(image))
-
-if __name__ == "__main__":
-    # draw_undistord()
-    # draw_edges()
-    # draw_perspective()
-    generate_images(
-        glob.glob('test_images/*.jpg'), 'output_images/test_images', perspective_trans)
