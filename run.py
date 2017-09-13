@@ -1,5 +1,5 @@
 from laneline import calibrate_camera, cal_undistort
-from laneline import edge_detect, perspective_trans
+from laneline import edge_detect, perspective_trans, find_lines
 import numpy as np
 import cv2
 import glob
@@ -65,6 +65,8 @@ def generate_images(in_fnames, out_directory, func):
         image = misc.imread(fname)
         save_path = path.join(out_directory, path.basename(fname))
         misc.imsave(save_path, func(image))
+
+
 def persp_binary_trans(img):
     return edge_detect(perspective_trans(
         cal_undistort(img, objpoints, imgpoints)))[0]
@@ -94,8 +96,16 @@ def generate_edge_images():
         glob.glob('output_images/test_images/*.jpg'),
         'output_images/test_images_color', color_trans)
 
+
+def draw_windows(binary_image_path):
+    binary_warped = misc.imread(binary_image_path)
+    find_lines(binary_warped)
+
+
 if __name__ == "__main__":
     # draw_undistord()
     # draw_edges()
     # draw_perspective()
-    generate_edge_images()
+    for path in glob.glob('output_images/test_images_binary/*.jpg'):
+        print(path)
+        draw_windows(path)
