@@ -166,12 +166,20 @@ def find_lines(binary_warped):
 
     out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
     out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
-    plt.imshow(out_img)
-    plt.plot(left_fitx, ploty, color='yellow')
-    plt.plot(right_fitx, ploty, color='yellow')
-    plt.xlim(0, 1280)
-    plt.ylim(720, 0)
-    plt.show()
+    surface = np.zeros_like(out_img)
+    edges = list(zip(left_fitx, ploty)) + list(zip(right_fitx, ploty))[::-1]
+    surface = cv2.fillPoly(
+        np.zeros_like(out_img),
+        [np.int32(edges)],
+        (0, 255, 0)
+    )
+    return surface
+    # plt.imshow(surface)
+    # plt.plot(left_fitx, ploty, color='yellow')
+    # plt.plot(right_fitx, ploty, color='yellow')
+    # plt.xlim(0, 1280)
+    # plt.ylim(720, 0)
+    # plt.show()
 
 
 def perspective_trans(img):
