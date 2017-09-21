@@ -1,6 +1,22 @@
+import cv2
+import laneline
+import glob
+import numpy as np
+from scipy import misc
+import matplotlib.pyplot as plt
+from moviepy.editor import VideoFileClip
+import pickle
+from pathlib import Path
+
+
 # Define a class to receive the characteristics of each line detection
 class Line():
-    def __init__(self):
+
+    MATRIX_PATH = 'matrix.p'
+
+    def __init__(self, objpoints, imgpoints):
+        self.objpoints = objpoints
+        self.imgpoints = imgpoints
         # was the line detected in the last iteration?
         self.detected = False
         # x values of the last n fits of the line
@@ -21,3 +37,51 @@ class Line():
         self.allx = None
         # y values for detected line pixels
         self.ally = None
+
+        matrix = Path(self.MATRIX_PATH)
+        if matrix.is_file():
+            two_M = pickle.load(open(self.MATRIX_PATH, "rb"))
+            self.M = two_M['M']
+            self.Minv = two_M['Minv']
+        else:
+            M, Minv = laneline.compute_perspective_trans_M()
+            self.M = M
+            self.Minv = Minv
+            pickle.dump({'M': M, 'Minv': Minv}, open(self.MATRIX_PATH, 'wb'))
+
+    def process(self, img):
+        image = img.copy()
+        calibrated_image = laneline.cal_undistort(
+            image, self.objpoints, self.imgpoints)
+        import ipdb; ipdb.set_trace()
+        bird_eye_img = laneline.perspective_trans(calibrated_image, self.M)
+        edge_img = laneline.edge_detect(bird_eye_img)
+        bird_lane_mask, left_curv, right_curv = laneline.find_lines(edge_img)
+        persp_lane_mask = laneline.perspective_trans(bird_lane_mask, self.Minv)
+        image[:, :, 1] = image[:, :, 1] + persp_lane_mask[:, :, 1]
+        return image.astype(np.uint8)
+
+
+def process_video(video_path, output_path):
+    objpoints, imgpoints = laneline.calibrate_camera(
+        glob.glob('camera_cal/*.jpg'))
+    processor = Line(objpoints, imgpoints)
+    clip1 = VideoFileClip(video_path)
+    output_video = clip1.fl_image(processor.process)
+    output_video.write_videofile(output_path, audio=False)
+
+
+def process_image(image_path):
+    objpoints, imgpoints = laneline.calibrate_camera(
+        glob.glob('camera_cal/*.jpg'))
+    processor = Line(objpoints, imgpoints)
+    image = misc.imread(image_path)
+    return processor.process(image)
+
+
+if __name__ == "__main__":
+    # process_video("project_video.mp4", "output_videos/project_video.mp4")
+    image = process_image("test_images/straight_lines1.jpg")
+    import ipdb; ipdb.set_trace()
+    plt.imshow(image)
+    plt.show()

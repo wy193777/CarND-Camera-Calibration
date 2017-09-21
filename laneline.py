@@ -41,7 +41,7 @@ def calibrate_camera(fnames):
 
 def cal_undistort(img, objpoints, imgpoints):
     # Use cv2.calibrateCamera() and cv2.undistort()
-    print(img.shape)
+    # print(img.shape)
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
         objpoints, imgpoints, (img.shape[1], img.shape[0]), None, None)
     return cv2.undistort(img, mtx, dist, None, mtx)
@@ -60,7 +60,7 @@ def detect_channel_edge(channel, threshold):
     return sxbinary
 
 
-def edge_detect(img, s_thresh=(170, 255), l_thresh=(20, 100)):
+def edge_detect_binary_and_color(img, s_thresh=(170, 255), l_thresh=(20, 100)):
     img = np.copy(img)
     # Convert to HSV color space and separate the V channel
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
@@ -79,6 +79,26 @@ def edge_detect(img, s_thresh=(170, 255), l_thresh=(20, 100)):
     combined_binary = np.zeros_like(l_binary)
     combined_binary[(s_binary == 1) | (l_binary == 1)] = 255
     return color_binary, combined_binary
+
+
+def edge_detect(img, s_thresh=(170, 255), l_thresh=(20, 100)):
+    img = np.copy(img)
+    # Convert to HSV color space and separate the V channel
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
+    l_channel = hsv[:, :, 1]
+    s_channel = hsv[:, :, 2]
+    # Sobel x
+    l_binary = detect_channel_edge(l_channel, l_thresh)
+    # Threshold color channel
+    s_binary = detect_channel_edge(s_channel, s_thresh)
+    # s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
+    # Stack each channel
+    # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It
+    # might be beneficial to replace this channel with something else.
+
+    combined_binary = np.zeros_like(l_binary)
+    combined_binary[(s_binary == 1) | (l_binary == 1)] = 255
+    return combined_binary
 
 
 def find_lines(binary_warped):
@@ -171,9 +191,13 @@ def find_lines(binary_warped):
     surface = cv2.fillPoly(
         np.zeros_like(out_img),
         [np.int32(edges)],
-        (0, 255, 0)
+        (0, 127, 0)
     )
-    return surface
+    y_eval = np.max(ploty)
+    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
+    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
+    # print(left_curverad, right_curverad)
+    return surface, left_curverad, right_curverad
     # plt.imshow(surface)
     # plt.plot(left_fitx, ploty, color='yellow')
     # plt.plot(right_fitx, ploty, color='yellow')
@@ -182,7 +206,7 @@ def find_lines(binary_warped):
     # plt.show()
 
 
-def perspective_trans(img):
+def compute_perspective_trans_M():
     w, h = 1280, 720
     x, y = 0.5*w, 0.8*h
     src = np.float32([
@@ -195,9 +219,14 @@ def perspective_trans(img):
         [(w-x)/2., 0.82*h],
         [(w+x)/2., 0.82*h],
         [(w+x)/2., h]])
+    M = cv2.getPerspectiveTransform(src, dst)
+    Minv = M = cv2.getPerspectiveTransform(dst, src)
+    return (M, Minv)
+
+
+def perspective_trans(img, matrix):
     # Compute and apply perpective transform
     img_size = (img.shape[1], img.shape[0])
-    M = cv2.getPerspectiveTransform(src, dst)
-    warped = cv2.warpPerspective(
-        img, M, img_size, flags=cv2.INTER_NEAREST)
+
+    warped = cv2.warpPerspective(img, matrix, img_size)
     return warped
