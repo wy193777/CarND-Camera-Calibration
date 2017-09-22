@@ -53,7 +53,6 @@ class Line():
         image = img.copy()
         calibrated_image = laneline.cal_undistort(
             image, self.objpoints, self.imgpoints)
-        import ipdb; ipdb.set_trace()
         bird_eye_img = laneline.perspective_trans(calibrated_image, self.M)
         edge_img = laneline.edge_detect(bird_eye_img)
         bird_lane_mask, left_curv, right_curv = laneline.find_lines(edge_img)
@@ -80,8 +79,8 @@ def process_image(image_path):
 
 
 if __name__ == "__main__":
-    # process_video("project_video.mp4", "output_videos/project_video.mp4")
-    image = process_image("test_images/straight_lines1.jpg")
-    import ipdb; ipdb.set_trace()
-    plt.imshow(image)
-    plt.show()
+    # process_video(
+    #     "challenge_video.mp4", "output_videos/challenge_video.mp4")
+    process_video(
+        "harder_challenge_video.mp4",
+        "output_videos/harder_challenge_video.mp4")

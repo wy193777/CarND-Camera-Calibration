@@ -220,7 +220,7 @@ def compute_perspective_trans_M():
         [(w+x)/2., 0.82*h],
         [(w+x)/2., h]])
     M = cv2.getPerspectiveTransform(src, dst)
-    Minv = M = cv2.getPerspectiveTransform(dst, src)
+    Minv = cv2.getPerspectiveTransform(dst, src)
     return (M, Minv)
 
 

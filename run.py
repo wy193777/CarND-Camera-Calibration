@@ -1,4 +1,4 @@
-from laneline import calibrate_camera, cal_undistort
+from laneline import calibrate_camera, cal_undistort, compute_perspective_trans_M
 from laneline import edge_detect, perspective_trans, find_lines
 import numpy as np
 import cv2
@@ -44,7 +44,8 @@ def draw_edges():
 
 def draw_perspective():
     image = misc.imread('test_images/straight_lines1.jpg')
-    result = perspective_trans(image)
+    M, Minv = compute_perspective_trans_M()
+    result = perspective_trans(image, M)
 
     # Plot the result
     f, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 9))
@@ -105,7 +106,7 @@ def draw_windows(binary_image_path):
 if __name__ == "__main__":
     # draw_undistord()
     # draw_edges()
-    # draw_perspective()
-    for path in glob.glob('output_images/test_images_binary/*.jpg'):
-        print(path)
-        draw_windows(path)
+    draw_perspective()
+    # for path in glob.glob('output_images/test_images_birds_eye/*.jpg'):
+    #     print(path)
+    #     draw_windows(path)
