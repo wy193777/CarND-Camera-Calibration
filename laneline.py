@@ -231,6 +231,7 @@ def compute_perspective_trans_M():
         [(w-x)/2., 0.82*h],
         [(w+x)/2., 0.82*h],
         [(w+x)/2., h]])
+    import ipdb; ipdb.set_trace()
     M = cv2.getPerspectiveTransform(src, dst)
     Minv = cv2.getPerspectiveTransform(dst, src)
     return (M, Minv)
