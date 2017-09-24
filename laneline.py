@@ -81,23 +81,39 @@ def edge_detect_binary_and_color(img, s_thresh=(170, 255), l_thresh=(20, 100)):
     return color_binary, combined_binary
 
 
-def edge_detect(img, s_thresh=(170, 255), l_thresh=(20, 100)):
+def edge_detect(img, s_thresh=(20, 255), l_thresh=(20, 255)):
     img = np.copy(img)
-    # Convert to HSV color space and separate the V channel
-    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
-    l_channel = hsv[:, :, 1]
-    s_channel = hsv[:, :, 2]
-    # Sobel x
-    l_binary = detect_channel_edge(l_channel, l_thresh)
-    # Threshold color channel
-    s_binary = detect_channel_edge(s_channel, s_thresh)
-    # s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
-    # Stack each channel
-    # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It
-    # might be beneficial to replace this channel with something else.
+    # for yellow
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    yellow = cv2.inRange(hsv, (20, 100, 100), (50, 255, 255))
 
-    combined_binary = np.zeros_like(l_binary)
-    combined_binary[(s_binary == 1) | (l_binary == 1)] = 255
+    # for white
+    sensitivity_1 = 68
+    sensitivity_2 = 60
+
+    white = cv2.inRange(hsv, (0, 0, 255 - sensitivity_1), (255, 20, 255))
+    hsl = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
+    white_2 = cv2.inRange(
+        hsl, (0, 255 - sensitivity_2, 0), (255, 255, sensitivity_2))
+    white_3 = cv2.inRange(img, (200, 200, 200), (255, 255, 255))
+    # l_channel = hls[:, :, 1]
+    # s_channel = hls[:, :, 2]
+    # r_channel = img[:, :, 0]
+    # g_channel = img[:, :, 1]
+    # Sobel x
+    # channels = [
+    #     [l_channel, l_thresh],
+    #     [s_channel, s_thresh],
+    #     [r_channel, (10, 100)],
+    #     [g_channel, (10, 100)]
+    # ]
+
+    # binaries = [detect_channel_edge(ch, th) for ch, th in channels]
+    binaries = [yellow, white, white_2, white_3]
+    combined_binary = np.zeros_like(yellow)
+    for binary in binaries:
+        combined_binary[(combined_binary >= 1) | (binary >= 1)] = 255
+
     return combined_binary
 
 
@@ -166,7 +182,6 @@ def find_lines(binary_warped):
             leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
         if len(good_right_inds) > minpix:
             rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
-
     # Concatenate the arrays of indices
     left_lane_inds = np.concatenate(left_lane_inds)
     right_lane_inds = np.concatenate(right_lane_inds)
@@ -197,13 +212,10 @@ def find_lines(binary_warped):
     left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
     right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
     # print(left_curverad, right_curverad)
-    return surface, left_curverad, right_curverad
-    # plt.imshow(surface)
-    # plt.plot(left_fitx, ploty, color='yellow')
-    # plt.plot(right_fitx, ploty, color='yellow')
-    # plt.xlim(0, 1280)
-    # plt.ylim(720, 0)
-    # plt.show()
+    lane_center = (right_fitx[719] + left_fitx[719]) / 2
+    center_offset_pixels = abs(binary_warped.shape[1] / 2 - lane_center)
+    center_offset_m = center_offset_pixels * 3.1 / 700
+    return surface, (left_curverad + right_curverad) / 2, center_offset_m
 
 
 def compute_perspective_trans_M():

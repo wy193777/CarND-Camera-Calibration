@@ -84,18 +84,11 @@ def undistort_trans(img):
 def generate_edge_images():
 
     def binary_trans(img):
-        return edge_detect(img)[1]
-
-    def color_trans(img):
-        return edge_detect(img)[0]
+        return edge_detect(img)
 
     generate_images(
-        glob.glob('output_images/test_images/*.jpg'),
+        glob.glob('output_images/test_images_birds_eye/**'),
         'output_images/test_images_binary', binary_trans)
-
-    generate_images(
-        glob.glob('output_images/test_images/*.jpg'),
-        'output_images/test_images_color', color_trans)
 
 
 def draw_windows(binary_image_path):
@@ -106,7 +99,8 @@ def draw_windows(binary_image_path):
 if __name__ == "__main__":
     # draw_undistord()
     # draw_edges()
-    draw_perspective()
+    generate_edge_images()
+    # draw_perspective()
     # for path in glob.glob('output_images/test_images_birds_eye/*.jpg'):
     #     print(path)
     #     draw_windows(path)
