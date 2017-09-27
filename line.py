@@ -62,15 +62,14 @@ class Line():
         calibrated_image = laneline.cal_undistort(
             image, self.objpoints, self.imgpoints
         )
-        import ipdb; ipdb.set_trace()
         bird_eye_img = laneline.perspective_trans(calibrated_image, self.M)
         edge_img = laneline.edge_detect(bird_eye_img)
         bird_lane_mask, radius, offset = laneline.find_lines(edge_img)
         persp_lane_mask = laneline.perspective_trans(bird_lane_mask, self.Minv)
         image[:, :, 1] = image[:, :, 1] + persp_lane_mask[:, :, 1]
         image = image.astype(np.uint8)
-        self.draw_text(image, "radius: {0:.2f}".format(radius), (50, 100))
-        self.draw_text(image, "offset: {0:.2f}".format(offset), (50, 200))
+        self.draw_text(image, "radius: {0:.2f} m".format(radius), (50, 100))
+        self.draw_text(image, "offset: {0:.2f} m".format(offset), (50, 200))
         return image
 
 
@@ -92,11 +91,11 @@ def process_image(image_path):
 
 
 if __name__ == "__main__":
-    plt.imshow(process_image('test_images/test7_white_road.png'))
-    plt.show()
-    # process_video(
-    #     "project_video.mp4",
-    #     "output_videos/project_video.mp4")
+    # plt.imshow(process_image('test_images/test1.jpg'))
+    # plt.show()
+    process_video(
+        "project_video.mp4",
+        "output_videos/project_video.mp4")
     # process_video(
     #     "challenge_video.mp4",
     #     "output_videos/challenge_video.mp4")

@@ -209,12 +209,21 @@ def find_lines(binary_warped):
         (0, 127, 0)
     )
     y_eval = np.max(ploty)
-    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
-    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
-    # print(left_curverad, right_curverad)
+
+    ym_per_pix = 30/720  # meters per pixel in y dimension
+    xm_per_pix = 3.7/700  # meters per pixel in x dimension
+
+    # Fit new polynomials to x,y in world space
+    left_fit_cr = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
+    right_fit_cr = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
+    # Calculate the new radii of curvature
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+    # Now our radius of curvature is in meters
     lane_center = (right_fitx[719] + left_fitx[719]) / 2
     center_offset_pixels = abs(binary_warped.shape[1] / 2 - lane_center)
-    center_offset_m = center_offset_pixels * 3.1 / 700
+    center_offset_m = center_offset_pixels * 3.7 / 700
+
     return surface, (left_curverad + right_curverad) / 2, center_offset_m
 
 
@@ -231,7 +240,6 @@ def compute_perspective_trans_M():
         [(w-x)/2., 0.82*h],
         [(w+x)/2., 0.82*h],
         [(w+x)/2., h]])
-    import ipdb; ipdb.set_trace()
     M = cv2.getPerspectiveTransform(src, dst)
     Minv = cv2.getPerspectiveTransform(dst, src)
     return (M, Minv)
